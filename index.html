@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剪刀石頭布遊戲</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(to right, #84fab0, #8fd3f4);
+            font-family: 'Arial', sans-serif;
+        }
+        h1 {
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+        }
+        .choice {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+        .choice:hover {
+            transform: scale(1.1);
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .win {
+            color: green; /* 贏的文字顏色 */
+        }
+        .lose {
+            color: red; /* 輸的文字顏色 */
+        }
+        .draw {
+            color: blue; /* 平手的文字顏色 */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>剪刀石頭布</h1>
+    <div class="button-container">
+        <img src="rock.png" id="rock" class="choice" alt="石頭">
+        <img src="paper.png" id="paper" class="choice" alt="布">
+        <img src="scissors.png" id="scissors" class="choice" alt="剪刀">
+    </div>
+    <div id="result"></div>
+
+    <audio id="winSound" src="win.mp3"></audio>
+    <audio id="loseSound" src="lose.mp3"></audio>
+    <audio id="drawSound" src="draw.mp3"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let choices = ["rock", "paper", "scissors"];
+        let playerWins = 0;
+        let computerWins = 0;
+        let draws = 0;
+
+        function getComputerChoice() {
+            let randomIndex = Math.floor(Math.random() * choices.length);
+            return choices[randomIndex];
+        }
+
+        function determineWinner(playerChoice, computerChoice) {
+            if (playerChoice === computerChoice) {
+                draws++;
+                return "平局！";
+            } else if (
+                (playerChoice === "rock" && computerChoice === "scissors") ||
+                (playerChoice === "paper" && computerChoice === "rock") ||
+                (playerChoice === "scissors" && computerChoice === "paper")
+            ) {
+                playerWins++;
+                return "你贏了！";
+            } else {
+                computerWins++;
+                return "你輸了！";
+            }
+        }
+
+        function playSound(result) {
+            if (result === "平局！") {
+                document.getElementById('drawSound').play();
+            } else if (result === "你贏了！") {
+                document.getElementById('winSound').play();
+            } else {
+                document.getElementById('loseSound').play();
+            }
+        }
+
+        function displayResult(playerChoice, computerChoice, result) {
+            let resultText = `你選擇了 ${playerChoice}！電腦選擇了 ${computerChoice}。${result}`;
+            document.getElementById('result').innerText = resultText;
+
+            // 根據結果設置顏色
+            const resultDiv = document.getElementById('result');
+            if (result === "平局！") {
+                resultDiv.className = 'draw';
+            } else if (result === "你贏了！") {
+                resultDiv.className = 'win';
+            } else {
+                resultDiv.className = 'lose';
+            }
+
+            checkWinner(result); // Pass the result to checkWinner
+        }
+
+        function checkWinner(result) {
+            if (playerWins === 3 || computerWins === 3 || draws === 3) {
+                let finalResult;
+                if (playerWins === 3) {
+                    finalResult = '恭喜你！你贏得了三場比賽！';
+                } else if (computerWins === 3) {
+                    finalResult = '遊戲結束！電腦贏得了三場比賽！';
+                } else {
+                    finalResult = '三場平局！';
+                }
+
+                // Play sound before showing the alert
+                playSound(finalResult.includes("平局") ? "平局！" : (playerWins === 3 ? "你贏了！" : "你輸了！"));
+
+                Swal.fire({
+                    title: finalResult,
+                    text: `你贏了 ${playerWins} 次，電腦贏了 ${computerWins} 次，平局 ${draws} 次。`,
+                    icon: playerWins === 3 ? 'success' : computerWins === 3 ? 'error' : 'info',
+                    confirmButtonText: '重新開始',
+                    showCancelButton: true,
+                    cancelButtonText: '結束遊戲'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        resetGame();
+                    } else {
+                        Swal.fire('遊戲結束！', '謝謝你的遊玩！', 'info');
+                    }
+                });
+            }
+        }
+
+        function resetGame() {
+            playerWins = 0;
+            computerWins = 0;
+            draws = 0;
+            document.getElementById('result').innerText = '';
+            document.getElementById('result').className = ''; // 清除顏色類別
+        }
+
+        document.getElementById('rock').onclick = function() {
+            let playerChoice = "rock";
+            let computerChoice = getComputerChoice();
+            let result = determineWinner(playerChoice, computerChoice);
+            displayResult("石頭 (rock)", computerChoice === "rock" ? "石頭 (rock)" : computerChoice === "paper" ? "布 (paper)" : "剪刀 (scissors)", result);
+        };
+
+        document.getElementById('paper').onclick = function() {
+            let playerChoice = "paper";
+            let computerChoice = getComputerChoice();
+            let result = determineWinner(playerChoice, computerChoice);
+            displayResult("布 (paper)", computerChoice === "rock" ? "石頭 (rock)" : computerChoice === "paper" ? "布 (paper)" : "剪刀 (scissors)", result);
+        };
+
+        document.getElementById('scissors').onclick = function() {
+            let playerChoice = "scissors";
+            let computerChoice = getComputerChoice();
+            let result = determineWinner(playerChoice, computerChoice);
+            displayResult("剪刀 (scissors)", computerChoice === "rock" ? "石頭 (rock)" : computerChoice === "paper" ? "布 (paper)" : "剪刀 (scissors)", result);
+        };
+    </script>
+
+</body>
+</html>
